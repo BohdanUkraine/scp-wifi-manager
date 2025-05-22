@@ -413,13 +413,11 @@ void mainWindow::disconnectFromWifi(info wifi, PreviewContainer* sender){
 }
 
 void mainWindow::tryConnect(info wifi, PreviewContainer* sender){
-    QDBusInterface nmInterface(
-        "org.freedesktop.NetworkManager",
-        "/org/freedesktop/NetworkManager",
-        "org.freedesktop.NetworkManager",
-        QDBusConnection::systemBus());
 
     if(!wifi.st.contains(saved)){
+
+        //if not saved
+
         ConnectionDetails connectionSettings;
 
         QVariantMap connection;
@@ -453,8 +451,8 @@ void mainWindow::tryConnect(info wifi, PreviewContainer* sender){
             QDBusConnection::systemBus());
 
         QDBusReply<QDBusObjectPath> addConnectionReply = settingsInterface.call("AddConnection",
-                                                        QVariant::fromValue(connectionSettings));
-        //std::cout << addConnectionReply.error().message().toStdString() <<'\n';
+                                                    QVariant::fromValue(connectionSettings));
+
         if (!addConnectionReply.isValid()) {
             if(addConnectionReply.error().message() ==
                 "802-11-wireless-security.psk: property is invalid")
@@ -467,50 +465,114 @@ void mainWindow::tryConnect(info wifi, PreviewContainer* sender){
         }
     }
 
-    QDBusReply<QDBusObjectPath> activateReply = nmInterface.call(
+
+    QDBusInterface nmInterface(
+        "org.freedesktop.NetworkManager",
+        "/org/freedesktop/NetworkManager",
+        "org.freedesktop.NetworkManager",
+        QDBusConnection::systemBus());
+
+
+    QDBusPendingCall asyncActivateCall = nmInterface.asyncCall(
         "ActivateConnection",
         QDBusObjectPath(savedPaths[wifi.ssid]),
         QDBusObjectPath(nmPath),
         QDBusObjectPath("/"));
 
-    wifi.st.clear();
-    wifi.st.append(saved);
 
-    if (!activateReply.isValid()){
-        //"Can't connect"
-        sender->showStatus("Can't connect"); //activateReply.error().message()
-        wifi.st.append(disconnected);
-    }
-    else{
-        sender->showStatus("Connected successfully");
-        wifi.st.append(connected);
-    }
+    processedSender = sender;
+    processedWifi = wifi;
 
-    for(PreviewContainer* c : containers){
-        info tmp = c->getInfo();
-        if(active.contains(tmp.ssid) && tmp.ssid != wifi.ssid){
-            tmp.st.clear();
-            tmp.st.append(disconnected);
-            tmp.st.append(saved);
-            c->stateChanged(tmp);
-        }
-    }
-
-    getActiveConnections();
-    wifi.ip = myIP;
-
-    for(PreviewContainer* c : containers){
-        info tmp = c->getInfo();
-        if(tmp.ssid == wifi.ssid && tmp.path != wifi.path){
-            tmp.st.clear();
-            tmp.st.append(connected);
-            tmp.st.append(saved);
-            tmp.ip = myIP;
-            c->stateChanged(tmp);
-        }
-    }
-    sender->stateChanged(wifi);
+    watcher = new QDBusPendingCallWatcher(asyncActivateCall, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this, &mainWindow::processActivateReply);
 }
+
+void mainWindow::processActivateReply(QDBusPendingCallWatcher* call){
+
+    QDBusPendingReply<QDBusObjectPath> reply = *call;
+    //std::cout << reply.value().path().toStdString() << '\n';
+
+
+    if (reply.isValid()) {
+        QString path = reply.value().path();
+
+        std::cout << path.toStdString() << '\n';
+
+        QDBusConnection::systemBus().connect(
+            "org.freedesktop.NetworkManager",
+            path,
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged",
+            this,
+            SLOT(onConnectionPropertiesChanged(QString, QVariantMap, QStringList)));
+    } else {
+        //processedSender->showStatus("Activation failed: " + reply.error().message());
+        //std::cout << reply.error().message().toStdString() << '\n';
+    }
+
+    call->deleteLater();
+    watcher->deleteLater();
+}
+
+void mainWindow::onConnectionPropertiesChanged(const QString &interface,
+                                               const QVariantMap &changedProperties,
+                                               const QStringList &invalidatedProperties){
+
+    info wifi = processedWifi;
+
+
+    if (interface == "org.freedesktop.NetworkManager.Connection.Active") {
+        if (changedProperties.contains("State")) {
+            uint state = changedProperties.value("State").toUInt();
+
+            if (state == 2) {// NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+                getActiveConnections();
+
+                wifi.st.clear();
+                wifi.st.append(saved);
+                wifi.st.append(connected);
+                wifi.ip = myIP;
+
+
+                for(PreviewContainer* c : containers){
+                    info tmp = c->getInfo();
+                    if(tmp.ssid == wifi.ssid && tmp.path != wifi.path){
+                        tmp.st.clear();
+                        tmp.st.append(connected);
+                        tmp.st.append(saved);
+                        tmp.ip = myIP;
+                        c->stateChanged(tmp);
+                    }
+                }
+
+                processedSender->showStatus("Connected successfully");
+                processedSender->stateChanged(wifi);
+
+            }else if (state == 0 || state == 4 || state == 3) {
+                // 0 - NM_ACTIVE_CONNECTION_STATE_NONE
+                // 1 - NM_ACTIVE_CONNECTION_STATE_ACTIVATING - not used
+                // 3 - NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
+                // 4 - NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
+
+                processedSender->showStatus("Wrong password");
+
+                wifi.st.clear();
+                wifi.st.append(disconnected);
+
+                QDBusInterface connectionInterface(
+                    "org.freedesktop.NetworkManager",
+                    savedPaths[wifi.ssid],
+                    "org.freedesktop.NetworkManager.Settings.Connection",
+                    QDBusConnection::systemBus());
+
+                connectionInterface.call("Delete");
+
+                processedSender->stateChanged(wifi);
+            }
+        }
+    }
+}
+
 
 void mainWindow::deleteConnection(info wifi, PreviewContainer* sender){
 

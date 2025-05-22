@@ -68,13 +68,27 @@ private:
     QList<PreviewContainer*> containers;
     QDBusInterface *scan;
 
+    QDBusPendingCallWatcher* watcher;
+    QDBusPendingCall asyncActivateCall;
+
+    info processedWifi;
+    PreviewContainer* processedSender;
+
 
 public slots:
     void tryConnect(info wifi, PreviewContainer* sender);
+    void processActivateReply(QDBusPendingCallWatcher* call);
+
     void disconnectFromWifi(info wifi, PreviewContainer* sender);
     void deleteConnection(info wifi, PreviewContainer* sender);
     void requestScan();
     void toggleSettings();
+
+    void onConnectionPropertiesChanged(const QString &interface,
+                                      const QVariantMap &changedProperties,
+                                      const QStringList &invalidatedProperties);
+
+
     //void refreshPos();
     void refreshList();
 };

@@ -157,6 +157,7 @@ PreviewContainer::~PreviewContainer(){
 }
 
 void PreviewContainer::showStatus(QString error){
+    //std::cout << "try connect called in container" << '\n';
     status->displayStatus(error);
     nextForm->click();
 }
@@ -171,7 +172,7 @@ info PreviewContainer::getInfo(){
 }
 
 void PreviewContainer::tryConnect(QString pswd){
-    //std::cout << pswd.toStdString() << '\n';
+    std::cout << "try connect called in container" << '\n';
     statusSlideIn->start();
     myInfo.password = pswd;
     emit tryConnectSignal(myInfo, this);
@@ -413,7 +414,6 @@ void StatusContainer::reveal(){
 }
 
 void StatusContainer::displayStatus(QString status){
-    //setText(status);
     this->status->setText(status);
     //stopping = true;
     QTimer::singleShot(1500, this, [=](){stopping = true;}); // because too fast :)
