@@ -1,4 +1,4 @@
-<img width="1010" height="480" alt="зображення" src="https://github.com/user-attachments/assets/ebf713a1-0b52-4e40-ac5f-b637b7eac4dc" /># SCP-WIFI-MANAGER: Foundation Personnel Network Utility
+# SCP-WIFI-MANAGER: Foundation Personnel Network Utility
 
 ## Welcome, New Foundation Personnel!
 
