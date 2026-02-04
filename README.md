@@ -27,16 +27,19 @@ Scan the environment for local wireless anomalies. The UI utilizes a **proprieta
 <img src="readmeGifs/refreshWifiList.gif" width="400" alt="Scanning">
 
 ### 2. Secure Connection
-Standard WPA2/RSN handshake protocols. 
+Standard WPA2/RSN handshake protocols.
+<br>
 <img src="readmeGifs/connectToWifi.gif" width="400" alt="Connect">
 <img src="readmeGifs/tryConnectingWithPassword.gif" width="400" alt="Password">
 
 ### 3. Tactical Hotspot (SCP_Hotspot_Profile)
 Deployment of a localized secure access point. The system automatically wipes the connection profile upon termination to ensure a zero-trace footprint.
+<br>
 <img src="readmeGifs/hotspotSettings.gif" width="400" alt="Settings">
 
 ### 4. Rapid Authentication (QR)
 Bypass manual credential entry using encrypted visual handshakes.
+<br>
 <img src="readmeGifs/shareViaQrCode.gif" width="400" alt="QR">
 
 ---
