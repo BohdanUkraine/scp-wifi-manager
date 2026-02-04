@@ -15,10 +15,10 @@ The interface utilizes a **proprietary signal font** (`scp-wifi-strength-font.tt
 | Icon Code | Strength Range | Foundation Designation |
 | :---: | :--- | :--- |
 | <img src="readmeGifs/strength_4.png" width="50" alt="4"> | 80% - 100% | **Optimal Alignment** (Maximum) |
-| <img src="readmeGifs/strength_3.png" width="50" alt="3"> | 60% - 79% | **High Resonance** |
-| <img src="readmeGifs/strength_2.png" width="50" alt="2"> | 40% - 59% | **Stable Connection** |
-| <img src="readmeGifs/strength_1.png" width="50" alt="1"> | 20% - 39% | **Low Signal Fidelity** |
-| <img src="readmeGifs/strength_0.png" width="50" alt="0"> | 0% - 19% | **Near-Zero Resonance** (Critical) |
+| <img src="readmeGifs/strength_3.png" width="32" alt="3"> | 60% - 79% | **High Resonance** |
+| <img src="readmeGifs/strength_2.png" width="32" alt="2"> | 40% - 59% | **Stable Connection** |
+| <img src="readmeGifs/strength_1.png" width="32" alt="1"> | 20% - 39% | **Low Signal Fidelity** |
+| <img src="readmeGifs/strength_0.png" width="32" alt="0"> | 0% - 19% | **Near-Zero Resonance** (Critical) |
 
 ## Operational Guide
 
