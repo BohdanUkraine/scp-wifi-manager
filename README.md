@@ -10,19 +10,19 @@ Congratulations on securing your position within the SCP Foundation. Your securi
 
 ### 1. Network Discovery
 Scan the environment for local wireless anomalies. The UI utilizes a **proprietary signal font** (`scp-wifi-strength-font.ttf`) to render unique signal fidelity icons.
-![Scan](imgs/refreshWifiList.gif)
+![Scan](readmeGifs/refreshWifiList.gif)
 
 ### 2. Secure Connection
 Standard WPA2/RSN handshake protocols. 
-![Connect](imgs/connectToWifi.gif) ![Password](imgs/tryConnectingWithPassword.gif)
+![Connect](readmeGifs/connectToWifi.gif) ![Password](readmeGifs/tryConnectingWithPassword.gif)
 
 ### 3. Tactical Hotspot (SCP_Hotspot_Profile)
 Deployment of a localized secure access point. The system automatically wipes the connection profile upon termination to ensure a zero-trace footprint.
-![Settings](imgs/hotspotSettings.gif)
+![Settings](readmeGifs/hotspotSettings.gif)
 
 ### 4. Rapid Authentication (QR)
 Bypass manual credential entry using encrypted visual handshakes.
-![QR](imgs/shareViaQrCode.gif)
+![QR](readmeGifs/shareViaQrCode.gif)
 
 ---
 
