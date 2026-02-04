@@ -1,4 +1,4 @@
-# SCP-WIFI-MANAGER: Foundation Personnel Network Utility
+<img width="1010" height="480" alt="зображення" src="https://github.com/user-attachments/assets/ebf713a1-0b52-4e40-ac5f-b637b7eac4dc" /># SCP-WIFI-MANAGER: Foundation Personnel Network Utility
 
 ## Welcome, New Foundation Personnel!
 
@@ -24,6 +24,7 @@ The interface utilizes a **proprietary signal font** (`scp-wifi-strength-font.tt
 
 ### 1. Network Discovery
 Scan the environment for local wireless anomalies. The UI utilizes a **proprietary signal font** (`scp-wifi-strength-font.ttf`) to render unique signal fidelity icons.
+<br>
 <img src="readmeGifs/refreshWifiList.gif" width="400" alt="Scanning">
 
 ### 2. Secure Connection
