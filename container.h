@@ -1,7 +1,10 @@
 #ifndef CONTAINER_H
 #define CONTAINER_H
 
+#pragma once
+
 #include <QWidget>
+#include <iostream>
 #include <QPalette>
 #include <QColor>
 #include <QLabel>
@@ -15,22 +18,12 @@
 #include <QIcon>
 #include <QLineEdit>
 #include <QMovie>
+#include <QTimer>
+#include <QPainter>
+#include "qrencode.h"
 
-enum state{
-    connected,
-    saved,
-    disconnected
-};
+#include "generic.h"
 
-struct info{
-    QString ssid;
-    QString password;
-    QString ip;
-    QString path;
-    int frequency;
-    int strength;
-    QList<state> st;
-};
 
 class Container : public QWidget
 {
@@ -75,6 +68,7 @@ private:
     QLabel *cover;
     QMovie *movie;
     bool stopping;
+    bool spawned;
 
     QPropertyAnimation *slideOut = new QPropertyAnimation(this, "pos", parent());
     QPropertyAnimation *revealAnim;
@@ -89,6 +83,25 @@ public slots:
 
 signals:
     void Ended();
+};
+
+class QrContainer : public Container
+{
+    Q_OBJECT
+public:
+    QrContainer(QWidget *parent = nullptr);
+    ~QrContainer();
+
+    void generateQrCode(info wifiInfo);
+
+private:
+    QImage *qrImage;
+    QLabel *qrLabel;
+
+    QPropertyAnimation *slideOut = new QPropertyAnimation(this, "pos", parent());
+
+public slots:
+    void click();
 };
 
 class PreviewContainer : public Container
@@ -124,11 +137,13 @@ public slots:
     void tryConnect(QString pswd);
     void disconnect();
     void deleteConnection();
+    void displayQrCode();
 
 signals:
     void tryConnectSignal(info wifi, PreviewContainer* sender);
     void disconnectSignal(info wifi, PreviewContainer* sender);
     void deleteConnectionSignal(info wifi, PreviewContainer* sender);
+    void displayQrCodeSignal(info wifiInfo);
 
 
 };
@@ -150,9 +165,11 @@ private:
 public slots:
     void click();
     void disconnectClick();
+    void displayQrCodeClick();
 
 signals:
     void disconnectSignal();
+    void displayQrCodeSignal();
 };
 
 class PasswordContainer : public Container
@@ -198,9 +215,11 @@ public slots:
     void connectToWifi();
     void click();
     void deleteWifi();
+    void displayQrCodeClick();
 
 signals:
     void tryConnectSignal(QString pswd);
+    void displayQrCodeSignal();
     void tryDelete();
 };
 

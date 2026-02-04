@@ -1,6 +1,8 @@
 #include "container.h"
-#include <QTimer>
-#include <iostream>
+
+/****************************************
+****************Container****************
+****************************************/
 
 Container::Container(QWidget *parent)
     : QWidget{parent}
@@ -29,17 +31,21 @@ Container::~Container(){
 void Container::click(){
 }
 
+/****************************************
+************PreviewContainer*************
+****************************************/
+
 QString PreviewContainer::strengthFromInt(int strength){
     if (strength >= 80) {
-        return "\uE804";  // Відмінний сигнал
+        return "\uE804";  // The strongest
     } else if (strength >= 60) {
-        return "\uE803";  // Добрий сигнал
+        return "\uE803";
     } else if (strength >= 40) {
-        return "\uE802";  // Середній сигнал
+        return "\uE802";
     } else if (strength >= 20) {
-        return "\uE801";  // Слабкий сигнал
+        return "\uE801";
     } else {
-        return "\uE800";  // Дуже слабкий сигнал
+        return "\uE800";  // The weakest
     }
 }
 
@@ -125,6 +131,10 @@ void PreviewContainer::stateChanged(info wifiInfo){
         connect(static_cast<ConnectedContainer*>(nextForm),
                 &ConnectedContainer::disconnectSignal,
                 this, &PreviewContainer::disconnect);
+
+        connect(static_cast<ConnectedContainer*>(nextForm),
+                &ConnectedContainer::displayQrCodeSignal,
+                this, &PreviewContainer::displayQrCode);
     } else
     if(wifiInfo.st.contains(saved) && wifiInfo.st.contains(disconnected)){
         //std::cout << "saved disconnected changed" << wifiInfo.ssid.toStdString() << '\n';
@@ -136,6 +146,10 @@ void PreviewContainer::stateChanged(info wifiInfo){
         connect(static_cast<SavedDisconnectedContainer*>(nextForm),
                 &SavedDisconnectedContainer::tryDelete,
                 this, &PreviewContainer::deleteConnection);
+
+        connect(static_cast<SavedDisconnectedContainer*>(nextForm),
+                &SavedDisconnectedContainer::displayQrCodeSignal,
+                this, &PreviewContainer::displayQrCode);//adasdasd
     } else
     if(!wifiInfo.st.contains(saved) && wifiInfo.st.contains(disconnected)){
         //std::cout << "disconnected changed" << wifiInfo.ssid.toStdString() << '\n';
@@ -188,6 +202,14 @@ void PreviewContainer::deleteConnection(){
     emit deleteConnectionSignal(myInfo, this);
 }
 
+void PreviewContainer::displayQrCode(){
+    emit displayQrCodeSignal(myInfo);
+}
+
+/****************************************
+***********ConnectedContainer************
+****************************************/
+
 ConnectedContainer::ConnectedContainer(info wifiInfo, QWidget *parent)
     : Container{parent}
 {
@@ -205,6 +227,7 @@ ConnectedContainer::ConnectedContainer(info wifiInfo, QWidget *parent)
     share->setIcon(QIcon(QPixmap("imgs/qr.png")));
     share->setIconSize(QSize(28,28));
     share->setStyleSheet(cs2);
+    connect(share, &QPushButton::clicked, this, &ConnectedContainer::displayQrCodeClick);
 
     disconnect = new QPushButton(this);
     disconnect->setGeometry(340, 10, 30, 30);
@@ -231,12 +254,92 @@ void ConnectedContainer::click(){
     slideOut->start();
 }
 
+void ConnectedContainer::displayQrCodeClick(){
+    emit displayQrCodeSignal();
+}
+
+/****************************************
+***************QrContainer***************
+****************************************/
+
+QrContainer::QrContainer(QWidget *parent)
+    : Container{parent}
+{
+    qrImage = new QImage();
+    qrLabel = new QLabel(this);
+
+    qrLabel->setGeometry(75, 25, 250, 250);
+    qrLabel->setAlignment(Qt::AlignCenter);
+    qrLabel->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    qrLabel->setStyleSheet("background-color: white; padding: 5px;");
+    qrLabel->raise();
+
+    callNextForm->setFixedSize(400, 300);
+
+    slideOut->setDuration(70);
+    slideOut->setStartValue(QPoint(0, 0));
+    slideOut->setEndValue(QPoint(0, 300));
+
+}
+
+QrContainer::~QrContainer(){
+
+}
+
+void QrContainer::generateQrCode(info wifiInfo){
+
+    QString qrText = QString("WIFI:S:%1;T:%2;P:%3;;")
+    .arg(wifiInfo.ssid, wifiInfo.type, wifiInfo.password);
+
+    QRcode *barcode = QRcode_encodeString(qrText.toUtf8().constData(),
+                                          0, QR_ECLEVEL_M, QR_MODE_8, 1);
+
+    if (!barcode) return;
+
+    int scale = 10;
+    int size = barcode->width;
+    qrImage = new QImage(size * scale, size * scale, QImage::Format_RGB32);
+    qrImage->fill(Qt::white);
+
+
+    QPainter painter(qrImage);
+    painter.setBrush(Qt::black);
+    painter.setPen(Qt::NoPen);
+
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            unsigned char b = barcode->data[y * size + x];
+            if (b & 0x01) {
+                painter.drawRect(x * scale, y * scale, scale, scale);
+            }
+        }
+    }
+
+    QRcode_free(barcode);
+
+    qrLabel->setPixmap(QPixmap::fromImage(*qrImage));
+    qrLabel->setScaledContents(true);
+    update();
+}
+
+void QrContainer::click(){
+    slideOut->start();
+}
+
+/****************************************
+***********PasswordContainer*************
+****************************************/
+
 PasswordContainer::PasswordContainer(QWidget *parent)
     : Container{parent}
 {
     input = new QLineEdit(this);
     input->setGeometry(10, 10, 270, 30);
     input->setEchoMode(QLineEdit::Password);
+
+    if(myInfo.type == "nopass"){
+        input->setEnabled(false);
+    }
 
     toggleVisibility = new QPushButton(this);
     toggleVisibility->setGeometry(290, 10, 30, 30);
@@ -286,13 +389,17 @@ void PasswordContainer::connectToWifi(){
     emit tryConnectSignal(input->text());
 }
 
+/****************************************
+******SavedDisconnectedContainer*********
+****************************************/
+
 SavedDisconnectedContainer::SavedDisconnectedContainer(QWidget *parent)
     : Container{parent}
 {
 
     disconnected = new QLabel(this);
     disconnected->setGeometry(10,0,320,50);
-    disconnected->setText("disconnected, available");
+    disconnected->setText("available");
     disconnected->setAttribute(Qt::WA_TransparentForMouseEvents, true);
     disconnected->setAlignment(Qt::AlignVCenter);
     disconnected->setStyleSheet("QLabel {font: 16pt; color: white;}");
@@ -309,6 +416,7 @@ SavedDisconnectedContainer::SavedDisconnectedContainer(QWidget *parent)
     share->setIcon(QIcon(QPixmap("imgs/qr.png")));
     share->setIconSize(QSize(28,28));
     share->setStyleSheet(cs2);
+    connect(share, &QPushButton::clicked, this, &SavedDisconnectedContainer::displayQrCodeClick);
 
     tryConnect = new QPushButton(this);
     tryConnect->setGeometry(340, 10, 30, 30);
@@ -339,10 +447,19 @@ void SavedDisconnectedContainer::click(){
     slideOut->start();
 }
 
+void SavedDisconnectedContainer::displayQrCodeClick(){
+    emit displayQrCodeSignal();
+}
+
+/****************************************
+*************StatusContainer*************
+****************************************/
+
 StatusContainer::StatusContainer(QWidget *parent, QString text)
     : Container{parent}
 {
     callNextForm->setHidden(true);
+    spawned = false;
 
     //TEXT
     status = new QLabel(this);
@@ -365,6 +482,7 @@ StatusContainer::StatusContainer(QWidget *parent, QString text)
     movie->setScaledSize(QSize(40,40));
     statusAnim->setMovie(movie);
     movie->start();
+
 
     statusAnim->raise();
     status->lower();
@@ -390,7 +508,7 @@ StatusContainer::StatusContainer(QWidget *parent, QString text)
     revealText2->setEndValue(QPoint(50, 0));
 
     //QTimer::singleShot(1500, this, &StatusContainer::stopGifAnim);
-    connect(movie, &QMovie::frameChanged, this, &StatusContainer::count);
+    //connect(movie, &QMovie::frameChanged, this, &StatusContainer::count);
     connect(slideOut, &QPropertyAnimation::finished, this, &StatusContainer::EmitEnd);
 }
 
@@ -415,7 +533,10 @@ void StatusContainer::reveal(){
 
 void StatusContainer::displayStatus(QString status){
     this->status->setText(status);
-    //stopping = true;
+    if(!spawned){
+        connect(movie, &QMovie::frameChanged, this, &StatusContainer::count);
+        spawned = true;
+    }
     QTimer::singleShot(1500, this, [=](){stopping = true;}); // because too fast :)
 }
 

@@ -1,7 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#pragma once
+
 #include <QMainWindow>
+#include <iostream>
 #include <QPushButton>
 #include <QFrame>
 #include <QColor>
@@ -10,10 +13,14 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QIcon>
-#include <QtDBus/QDBusInterface>
-#include <QtDBus/QDBusReply>
-#include <QtDBus/QDBusConnectionInterface>
+#include <QTimer>
+#include <QPropertyAnimation>
+#include <QScrollBar>
+
 #include "container.h"
+#include "wifimanager.h"
+#include "settingstab.h"
+#include "generic.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -41,55 +48,74 @@ private:
     Ui::mainWindow *ui;
     QPushButton *retry;
     QPushButton *togglePower;
-    QPushButton *toggleHotspot;
+    QPushButton *toggleHotspotButton;
     QPushButton *settingsButton;
+    QPropertyAnimation *settingsSlideIn;
+    QPropertyAnimation *settingsSlideOut;
+    QPropertyAnimation *qrSlideIn;
+    SettingsTab *settingsTab;
+    bool settingsVisible = false;
 
     QScrollArea *scrollBox;
+    QScrollBar *scrollBar;
     QWidget *contentWidget;
     QVBoxLayout *vBox;
 
     QFrame *line;
     QColor backgroundColor = QColor("#333333");
-    QString cs1="QPushButton {background-color: #202020;border: 0px;}"
+    QString cs1="QPushButton {background-color: #202020;border: 3px;}"
                 "QPushButton:hover {background-color: #454545}"
                 "QPushButton:pressed {background-color: #202020}";
 
+    QString hotspotWorksStyle="QPushButton {background-color: #204020;border: 3px;}"
+                  "QPushButton:hover {background-color: #456545}"
+                  "QPushButton:pressed {background-color: #204020}";
+
+
+    QString scrollStyle="QScrollBar:vertical {"
+                          "    border: none;"
+                          "    background: #333333;"
+                          "    width: 6px;"
+                          "    margin: 0px;"
+                          "}"
+                          "QScrollBar::handle:vertical {"
+                          "    background: #666666;"
+                          "    min-height: 20px;"
+                          "    border-radius: 3px;"
+                          "}"
+                          "QScrollBar::handle:vertical:hover {"
+                          "    background: #888888;"
+                          "}"
+                          "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+                          "    height: 0px;"
+                          "}";
+
     //work with wifi
 
-    void getActiveConnections();
     void clearVBox();
-    QList<QDBusObjectPath> pathListFromVariant(QVariant var);
 
-    QString nmPath;
-    QString myIP;
-    QList<QString> known, active;
-    QMap<QString, QString> savedPaths;
-    QList<QDBusObjectPath> activeConnections;
+    WiFiManager* wifimanager;
     QList<PreviewContainer*> containers;
-    QDBusInterface *scan;
-
-    QDBusPendingCallWatcher* watcher;
-    QDBusPendingCall asyncActivateCall;
-
-    info processedWifi;
-    PreviewContainer* processedSender;
+    QrContainer *qr;
 
 
 public slots:
-    void tryConnect(info wifi, PreviewContainer* sender);
-    void processActivateReply(QDBusPendingCallWatcher* call);
 
-    void disconnectFromWifi(info wifi, PreviewContainer* sender);
-    void deleteConnection(info wifi, PreviewContainer* sender);
-    void requestScan();
     void toggleSettings();
 
-    void onConnectionPropertiesChanged(const QString &interface,
-                                      const QVariantMap &changedProperties,
-                                      const QStringList &invalidatedProperties);
+    void togglewifi();
 
+    void toggleHotspot();
 
-    //void refreshPos();
-    void refreshList();
+    void displayScanResults();
+
+    void displayQrCode(info wifiInfo);
+
+    void refreshContainers(QString ssid, QList<state> states, QString ip = "");
+
+    void refreshUiOnConnectionChanged(QString oldSsid, QString newSsid);
+    void refreshUiOnDisconnected(QString ssid);
+    void refreshUiOnConnectionDeleted(QString ssid);
+
 };
 #endif // MAINWINDOW_H
